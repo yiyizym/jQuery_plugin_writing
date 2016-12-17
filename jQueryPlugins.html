@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>jQuery 插件编写分享</title>
+
+		<meta name="description" content="jQuery 插件编写分享">
+		<meta name="author" content="jude Zhu">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/black.css" id="theme">
+
+		<!-- Code syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h1>jQuery 插件编写</h1>
+					<h3>几个步骤 & 一些惯例</h3>
+					<p>
+						<small>By <a href="http://judes.me">jude.Zhu</a></small>
+					</p>
+				</section>
+
+				<section>
+					<h2>怎样使用jQuery插件</h2>
+
+					<div>
+						<p class="fragment"  style="text-align: left;">引入文件</p>
+						<pre class="fragment"><code data-trim contenteditable>
+&lt;script src='jQuery.js'&gt;&lt;/script&gt;
+&lt;script src='yourPlugin.js'&gt;&lt;/script&gt;
+						</code></pre>
+						<p class="fragment"  style="text-align: left;">两种方式</p>
+						<pre class="fragment"><code data-trim contenteditable>
+//javascript 调用
+//bootstrap datepicker
+$('.something').datepicker();
+						</code></pre>
+						<pre class="fragment"><code data-trim contenteditable>
+&lt;!-- 写在 html 的 data 属性 --&gt;
+&lt;!-- bootstrap datepicker --&gt;
+&lt;input data-provide="datepicker" /&gt;
+						</code></pre>
+					</div>
+				</section>
+
+				<section>
+					<h2>把插件方法挂在 $.fn 下面</h2>
+					<p class="fragment"> <span class='_green'> ruby </span>的 Class 中引入 module </p>
+					<pre class="fragment"><code data-trim contenteditable>
+//Greenify.js
+//这是一个把字体变绿的插件
+
+// usage: $('.something').greenify();
+
+
+function greenify(){
+  this.css('color','green');
+}
+
+$.fn.greenify = greenify;
+					</code></pre>
+
+				</section>
+
+				<section>
+					<h2>链式操作</h2>
+					<section>
+						<p class="fragment">我们在用 jQuery 时的习惯是</p>
+						<pre class="fragment"><code data-trim contenteditable>
+
+$(".parent").find(".child").css("color", "green").width(30);
+//每个方法都有一个返回值，每个返回值又再调用 jQuery 的方法
+						</code></pre>
+					</section>
+					<section>
+						<h2>按照惯例 插件要返回 jQuery 对象</h2>
+						<pre class="fragment"><code data-trim contenteditable>
+//Greenify.js
+
+// usage: $('.something').greenify();
+
+
+function greenify(){
+  return this.css('color','green');
+}
+
+$.fn.greenify = greenify;
+						</code></pre>
+					</section>
+				</section>
+				<section>
+					<h2>使用立即执行函数</h2>
+					<section>
+						<p class="fragment">javascript 只有一个命名空间 <span style="color: red;"> window </span></p>
+						<pre class="fragment"><code data-trim contenteditable>
+&lt;script src='jQuery.js'&gt;&lt;/script&gt;
+&lt;script src='Greenify.js'&gt;&lt;/script&gt;
+
+&lt;script&gt;
+window.$ = null;
+
+$('.something').greenify(); //error!
+&lt;/script&gt;
+						</code></pre>
+					</section>
+
+					<section>
+						<p>不被别人伤害</p>
+						<pre class="fragment"><code data-trim contenteditable>
+//Greenify.js
+
+//...省略代码
+
+$.fn.greenify = greenify;
+
+//如何确保 $ 就是 jQuery 的本身，而不是别的东西呢？
+//如何才能不被别人污染变量
+						</code></pre>
+						
+					</section>
+
+					<section>
+						<p>不伤害别人</p>
+						<pre class="fragment"><code data-trim contenteditable>
+//Greenify.js
+
+//...省略代码
+
+var local = 'should be local.' // but it is global
+
+//不在一个函数里面声明的变量都是全局变量
+/如何才能不污染别人的变量
+						</code></pre>
+
+					</section>
+
+					<section>
+						<pre class="fragment"><code data-trim contenteditable>
+//立即执行函数各种写法
+
+(function(){})();
+
+(function(){}());
+
+!function(){}();
+//...
+
+						</code></pre>
+						<pre class="fragment"><code data-trim contenteditable>
+//Greenify.js
+
+(function($){
+	var local = 'it is local now';
+	function greenify(){
+
+		return this.css('color', 'green');
+
+	}
+	$.fn.greenify = greenify;
+})(jQuery);
+
+						</code></pre>
+					</section>
+
+				</section>
+
+				<section>
+					<h2>默认配置、重写配置</h2>
+					<p>以 <span class="_chartreuse"> Bootstrap </span><span class="_default"> datepicker </span>为例</p>
+					<pre class="fragment"><code data-trim contenteditable>
+//默认显示为英语，要改为中文
+$('.something').datepicker({
+	lang: 'zh-CN'
+});
+					</code></pre>
+					<pre class="fragment"><code data-trim contenteditable>
+//Greenify.js
+
+(function($){
+	function greenify(opts){
+		var defaults = {
+			type: 'green'
+		};
+		opts = $.extend({},defaults,opts);
+		this.css('color', opts.type);
+		return this;
+	}
+	$.fn.greenify = greenify;
+})(jQuery);
+					</code></pre>
+				</section>
+
+				<section>
+					<h2>事件</h2>
+					<p> <span class="_trigger"> jQuery </span>的发布/订阅方式 </p>
+					<pre class="fragment"><code data-trim contenteditable>
+//Greenify.js
+
+(function($){
+	function greenify(opts){
+		var defaults = {
+			type: 'green'
+		};
+		opts = $.extend({},defaults,opts)
+		this.css('color', opts.type);
+
+		this.trigger('colorSetted','become green.');
+		
+		return this;
+	}
+	$.fn.greenify = greenify;
+})(jQuery);
+
+//index.html
+
+$('.something').on('colorSetted',function(event, msg){
+	alert(msg);
+});
+					</code></pre>
+
+				</section>
+
+				<section>
+					<h2>插件功能很复杂怎么办？</h2>
+					<section>
+							<p>异步依赖其它组件</p>
+							<p>响应外界事件</p>
+							<p>不断扩展功能</p>
+							<p>等等</p>
+					</section>
+					<section>
+						<p style="text-align: left;">初始化、增加事件监听、内部方法</p>
+						<pre class="fragment"><code data-trim contenteditable>
+//Greenify.js
+
+(function($){
+	function greenify(opts){
+
+		initialize();
+		//解决异步问题，请用 jQuery.Deferred()
+		//入门请看 http://www.ruanyifeng.com/blog/2011/08/a_detailed_explanation_of_jquery_deferred_object.html
+
+		addEventListenner();
+
+		function _internalMethod(){
+			//do .something.
+		};
+
+		//...
+
+		return this;
+	}
+	$.fn.greenify = greenify;
+})(jQuery);
+						</code></pre>
+					</section>
+
+					<section>
+					<p style="text-align: left;">力不从心的时候，</p>
+					<ol>
+						<li class="fragment">
+							看看别人是怎样写的：<a href="https://github.com/idiot/unslider/blob/master/src/unslider.js">unsilder.js</a>
+						</li>
+						<li class="fragment">
+							恶补一下 javascript 基础
+						</li>
+
+						<li class="fragment">
+							或者我可以帮到你？
+						</li>
+					</ol>
+
+				</section>
+
+				</section>
+
+				
+				<section style="text-align: left;">
+					<h1>Q & A</h1>
+				</section>
+
+				<section style="text-align: left;">
+					<h2>References</h2>
+					<ul>
+						<li><a href="http://lab.hakim.se/reveal-js/#/">这个幻灯片是怎样做出来的？</a></li>
+						<li><a href="http://learn.jquery.com/plugins/">jQuery 插件编写，官网学习中心</a></li>
+						<li><a href="http://www.css88.com/jqapi-1.9/">jQuery API 快速参考</a></li>
+					</ul>
+				</section>
+
+
+			</div>
+
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available at:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
